@@ -11,7 +11,7 @@ module.export = {
   module: {
     rules: [
       {
-        test: /\.ls$/,
+        test: /\.js$/,
         exclude: /node_modules/,
         loader: 'babel-loader'
       },
@@ -20,6 +20,7 @@ module.export = {
         loader: 'raw-loader'
       },
       {
+        test: /\.css$/,
         use: [
           MiniCSSExtrackPluin.loader,
           'css-loader'
@@ -32,7 +33,9 @@ module.export = {
       filename: 'index.html',
       template: './src/index.html'
     }),
-    new MiniCSSExtrackPluin()
+    new MiniCSSExtrackPluin({
+      filename: '[name].css',
+      chunkFilename: '[id].css'
+    })
   ]
-  
 };
