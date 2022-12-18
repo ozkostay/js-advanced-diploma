@@ -23,8 +23,28 @@
  * ```
  * */
 export function calcTileType(index, boardSize) {
-  // TODO: ваш код будет тут
-  return 'center';
+  const remainder = index % boardSize;
+  let word = null;
+  if (index <= boardSize - 1) {
+    word = 'top';
+  }
+
+  if (index >= (boardSize ** 2 - boardSize)) {
+    word = 'bottom';
+  }
+
+  if (remainder === 0) {
+    word = (word ? word + '-' : '') + 'left';
+  }
+
+  if (remainder === 7) {
+    word = (word ? word + '-' : '') + 'right';
+  }
+
+  if (!word) {
+    word = 'center';
+  }
+  return word;
 }
 
 export function calcHealthLevel(health) {
