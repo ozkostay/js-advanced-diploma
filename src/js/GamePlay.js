@@ -69,6 +69,7 @@ export default class GamePlay {
    * @param positions array of PositionedCharacter objects
    */
   redrawPositions(positions) {
+    // console.log('---------------- ',this.cells);
     for (const cell of this.cells) {
       cell.innerHTML = '';
     }
@@ -148,7 +149,12 @@ export default class GamePlay {
   onCellEnter(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellEnterListeners.forEach(o => o.call(null, index));
+    this.cellEnterListeners.forEach((item) => {
+      if (item.position === index) {
+        this.showCellTooltip(this.makeTitle(item.character), index);
+        return ;
+      }
+    });
   }
 
   onCellLeave(event) {
@@ -227,5 +233,14 @@ export default class GamePlay {
     if (this.container === null) {
       throw new Error('GamePlay not bind to DOM');
     }
+  }
+
+  makeTitle(c) {
+    const medal = '&#127894;';
+    const swords = '&#9876;';
+    const protection = '&#128737;';
+    const heart = '&#10084;';
+    const message = `${medal} ${c.level} ${swords} ${c.attack} ${protection} ${c.defence} ${heart} ${c.health}`;
+    return message;
   }
 }

@@ -15,19 +15,20 @@ export default class GameController {
     const team = generateTeam(playerTypes, 3, 4);
     const boardSize = this.gamePlay.boardSize;
     // Заполняем ячейки для игрока
-    const board = [];
+    const boardMy = [];
     for (let i = 0; i < this.gamePlay.boardSize; i += 1) {
-      board.push(i * boardSize);
-      board.push(i * boardSize + 1);
+      boardMy.push(i * boardSize);
+      boardMy.push(i * boardSize + 1);
     }
     const arrPositionCharacter = [];
     team.characters.forEach((item) => {
-      const arrBoardLength = board.length;
+      const arrBoardLength = boardMy.length;
       const randomIndex = Math.floor(Math.random() * arrBoardLength);
-      const position = board[randomIndex];
+      const position = boardMy[randomIndex];
       const positionedCharacter = new PositionedCharacter(item, position);
       arrPositionCharacter.push(positionedCharacter);
-      board.splice(randomIndex, 1);
+
+      boardMy.splice(randomIndex, 1);
     });
     // Заполняем ячейки для Противника
     const playerTypes2 = ['Daemon', 'Undead', 'Vampire']; // доступные классы игрока
@@ -46,9 +47,13 @@ export default class GameController {
       arrPositionCharacter.push(positionedCharacter);
       boardEnemy.splice(randomIndex, 1);
     });
-    this.gamePlay.redrawPositions(arrPositionCharacter);
-
+  
     // TODO: add event listeners to gamePlay events
+    // this.gamePlay.addCellEnterListener(this.onCellEnter);
+    
+    this.gamePlay.cellEnterListeners = [...arrPositionCharacter];
+    this.gamePlay.redrawPositions(arrPositionCharacter);
+   
     // TODO: load saved stated from stateService
   }
 
@@ -57,6 +62,9 @@ export default class GameController {
   }
 
   onCellEnter(index) {
+    console.log('GC onCellEnter ', index);
+    // this.gamePlay.addCellEnterListener(callback);
+    // console.log('callback index', index);
     // TODO: react to mouse enter
   }
 
