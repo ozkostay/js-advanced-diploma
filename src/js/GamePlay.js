@@ -236,11 +236,6 @@ export default class GamePlay {
   }
 
   makeTitle(c) {
-    const medal = '&#127894;';
-    const swords = '&#9876;';
-    const protection = '&#128737;';
-    const heart = '&#10084;';
-    const message = `${medal} ${c.level} ${swords} ${c.attack} ${protection} ${c.defence} ${heart} ${c.health}`;
-    return message;
+    return `🎖️ ${c.level} ⚔️ ${c.attack} 🛡️ ${c.defence} ❤️ ${c.health}`;
   }
 }
