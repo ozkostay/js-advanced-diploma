@@ -12,6 +12,7 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
+    this.whoIsNow = { whoNow: 'start', indexCell: null};
   }
 
   bindToDOM(container) {
@@ -165,8 +166,71 @@ export default class GamePlay {
 
   onCellClick(event) {
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellClickListeners.forEach(o => o.call(null, index));
+    const playerClasses = ['bowman', 'swordsman', 'magician'];
+    let ownerNewCell = 'nobody'; // здесь владелец новой ячейки
+    
+    // узнаем владельца новой ячейки
+    if (event.target.classList.contains('character')) {
+      const arrClasses = event.target.className.split(' ');;
+      ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
+    }
+    
+    console.log(ownerNewCell);
+
+    // если самый первыё ход или желаем сменить своего героя то...
+    // if (ownerNewCell === 'player') {
+    //   // this.whoIsNow.whoNow === 'start' && 
+    //   //this.cells[this.whoIsNow.indexCell].classList.remove('selected', 'selected-yellow');
+
+      
+    //   return;
+    // } else {
+    //   this.showError("Для начала выберете своего героя!");
+    //   return;
+    // }
+
+    switch(ownerNewCell) {
+      case 'player':  // if (x === 'value1')
+        if (this.whoIsNow.whoNow === 'player') {
+          this.cells[this.whoIsNow.indexCell].classList.remove('selected', 'selected-yellow');
+        }
+        this.selectCell(index, 'yellow');
+        this.whoIsNow.whoNow = 'player';
+        this.whoIsNow.indexCell = index;
+        break;
+      case 'enemy':  // if (x === 'value2')
+        if (this.whoIsNow.whoNow === 'start') {
+          this.showError("Для начала выберете своего героя!");
+        }
+        break;
+    
+      default:
+        if (this.whoIsNow.whoNow === 'start') {
+          this.showError("Для начала выберете своего героя!");
+        }
+        break
+    }
+    
+
+    console.log('33333', this.whoIsNow);
+
+    // if (ownerNewCell === 'player') {
+    //   this.cells.forEach((item) => {
+    //     if (item.classList.contains('selected-yellow')) {
+    //       item.classList.remove('selected', 'selected-yellow');
+    //     }
+    //   });
+    //   this.selectCell(index, 'yellow');
+    // } else {
+      
+    // }
+    
+    // console.log('this.cellClickListeners',this.cellClickListeners);
+    // this.cellClickListeners.forEach(o => o.call(null, index));
+    // console.log('this.cellClickListeners',this.cellClickListeners);
   }
+
+  
 
   onNewGameClick(event) {
     event.preventDefault();
@@ -183,7 +247,7 @@ export default class GamePlay {
     this.loadGameListeners.forEach(o => o.call(null));
   }
 
-  static showError(message) {
+  showError(message) {
     alert(message);
   }
 
@@ -209,7 +273,7 @@ export default class GamePlay {
   hideCellTooltip(index) {
     this.cells[index].title = '';
   }
-  
+
   showDamage(index, damage) {
     return new Promise((resolve) => {
       const cell = this.cells[index];
@@ -237,5 +301,15 @@ export default class GamePlay {
 
   makeTitle(c) {
     return `🎖️ ${c.level} ⚔️ ${c.attack} 🛡️ ${c.defence} ❤️ ${c.health}`;
+  }
+
+  arrCross( where, what){
+    let across = false;
+    for(let i = 0; i < what.length; i += 1){
+      // console.log('wwwwwwwwww ', where.indexOf(what[i]));
+      if (where.indexOf(what[i]) > -1) across = true;
+      if (across) break;
+    }
+    return across;
   }
 }

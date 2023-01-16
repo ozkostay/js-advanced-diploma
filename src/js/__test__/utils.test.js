@@ -15,6 +15,7 @@ test('calcHealthLevel', () => {
 
 test('calcTileType - top-left', () => {
   const word = calcTileType(0, 8);
+  console.log("=============== ", word);
   expect(word).toBe('top-left');
 });
 test('calcTileType - top-right', () => {
