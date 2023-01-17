@@ -1,4 +1,5 @@
 import { calcHealthLevel, calcTileType } from './utils';
+import cursors from './cursors';
 
 export default class GamePlay {
   constructor() {
@@ -12,7 +13,7 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
-    this.whoIsNow = { whoNow: 'start', indexCell: null};
+    this.whoIsNow = { whoNow: 'start', indexCell: null, character: null};
   }
 
   bindToDOM(container) {
@@ -150,12 +151,29 @@ export default class GamePlay {
   onCellEnter(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
+    const playerClasses = ['bowman', 'swordsman', 'magician'];
+    // this.setCursor(cursors.auto); 
+    this.setCursor(cursors.pointer);
+    // if (whoIsNow.whoNow === 'start') {
+
+    // }
     this.cellEnterListeners.forEach((item) => {
       if (item.position === index) {
         this.showCellTooltip(this.makeTitle(item.character), index);
-        return ;
+        // return ;
+        // this.setCursor(cursors.pointer);
+        const arrClasses = event.target.firstChild.className.split(' ');;
+        // console.log('event.target.className', event.target.firstChild);
+        const ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
+        if (ownerNewCell !== 'player') {
+          this.setCursor(cursors.crosshair);
+        }
       }
     });
+    // console.log('===== Enter', index, this.cellEnterListeners);
+    
+
+
   }
 
   onCellLeave(event) {
@@ -168,26 +186,15 @@ export default class GamePlay {
     const index = this.cells.indexOf(event.currentTarget);
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     let ownerNewCell = 'nobody'; // здесь владелец новой ячейки
-    
+    let character = 'start';
     // узнаем владельца новой ячейки
     if (event.target.classList.contains('character')) {
-      const arrClasses = event.target.className.split(' ');;
-      ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
+      const arrClasses = event.target.className.split(' ');
+      character = this.arrCross( playerClasses, arrClasses);
+      ownerNewCell = character ? 'player' : 'enemy';
     }
     
     console.log(ownerNewCell);
-
-    // если самый первыё ход или желаем сменить своего героя то...
-    // if (ownerNewCell === 'player') {
-    //   // this.whoIsNow.whoNow === 'start' && 
-    //   //this.cells[this.whoIsNow.indexCell].classList.remove('selected', 'selected-yellow');
-
-      
-    //   return;
-    // } else {
-    //   this.showError("Для начала выберете своего героя!");
-    //   return;
-    // }
 
     switch(ownerNewCell) {
       case 'player':  // if (x === 'value1')
@@ -197,6 +204,7 @@ export default class GamePlay {
         this.selectCell(index, 'yellow');
         this.whoIsNow.whoNow = 'player';
         this.whoIsNow.indexCell = index;
+        this.whoIsNow.character = character;
         break;
       case 'enemy':  // if (x === 'value2')
         if (this.whoIsNow.whoNow === 'start') {
@@ -212,7 +220,8 @@ export default class GamePlay {
     }
     
 
-    console.log('33333', this.whoIsNow);
+    // console.log('33333', this.whoIsNow);
+    this.sellsDetect();
 
     // if (ownerNewCell === 'player') {
     //   this.cells.forEach((item) => {
@@ -304,12 +313,48 @@ export default class GamePlay {
   }
 
   arrCross( where, what){
-    let across = false;
+    let across = null ;
+
+    console.log('2223== ',where, what);
     for(let i = 0; i < what.length; i += 1){
       // console.log('wwwwwwwwww ', where.indexOf(what[i]));
-      if (where.indexOf(what[i]) > -1) across = true;
+      if (where.indexOf(what[i]) > -1) across = what[i];
       if (across) break;
+      //console.log('www', i, what[i]);
     }
     return across;
+  }
+
+  sellsDetect() {
+    console.log('sellsDetect', this.whoIsNow);
+    console.log('колонка', this.whoIsNow.indexCell % this.boardSize);
+    const kolonka = this.whoIsNow.indexCell % this.boardSize;
+    console.log('ряд', Math.floor(this.whoIsNow.indexCell / this.boardSize));
+    let step = null;
+    switch(this.whoIsNow.character) {
+      case 'bowman':  // if (x === 'value1')
+      step = 2;
+        break;
+      case 'swordsman':  // if (x === 'value2')
+      step = 4;
+        break;
+    
+      default:
+        // magician
+        step = 1;
+        break
+    }
+    // Мечники/Скелеты - 4 клетки в любом направлении
+    // Лучники/Вампиры - 2 клетки в любом направлении
+    // Маги/Демоны - 1 клетка в любом направлении
+    const indexCell = this.whoIsNow.indexCell;
+    for ( let i =  -5; i < (step + 1); i += 1) {
+      console.log('indexCell', indexCell + i, ((indexCell + i) % this.boardSize) - this.whoIsNow.indexCell % this.boardSize);  
+      
+    }
+    // console.log('indexCell', indexCell-);
+    // let matrix = [];
+    
+
   }
 }
