@@ -13,7 +13,8 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
-    this.whoIsNow = { whoNow: 'start', indexCell: null, character: null, trueSells: []};
+    this.playerNow = { whoNow: 'start', indexCell: null, character: null, selsToMove: []};
+    this.whoseTurn = 'player';
   }
 
   bindToDOM(container) {
@@ -152,19 +153,26 @@ export default class GamePlay {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
     const playerClasses = ['bowman', 'swordsman', 'magician'];
+    let ownerNewCell;
     this.setCursor(cursors.pointer);
     this.cellEnterListeners.forEach((item) => {
       if (item.position === index) {
         this.showCellTooltip(this.makeTitle(item.character), index);
         const arrClasses = event.target.firstChild.className.split(' ');;
-        const ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
+        ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
         if (ownerNewCell !== 'player') {
           this.setCursor(cursors.crosshair);
         }
       }
     });
-    if (!this.whoIsNow.trueSells.includes(index)) {
+    if (!this.playerNow.selsToMove.includes(index)) {
       this.setCursor(cursors.notallowed);
+    } else {
+      if (ownerNewCell === 'enemy') {
+        this.selectCell(index, 'red');
+      } else {
+        this.selectCell(index, 'green');
+      }
     }
   }
 
@@ -172,6 +180,13 @@ export default class GamePlay {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
     this.cellLeaveListeners.forEach(o => o.call(null, index));
+    const classToDel = ['selected', 'selected-yellow',  'selected-green', 'selected-red',]
+    // const sellClasses = this.cells[index].className.split(' ');
+    classToDel.forEach((item) => {
+      this.cells[index].classList.remove(item);
+    });
+
+    // this.selectCell(index, 'green');
   }
 
   onCellClick(event) {
@@ -188,22 +203,22 @@ export default class GamePlay {
 
     switch(ownerNewCell) {
       case 'player':  // if (x === 'value1')
-        if (this.whoIsNow.whoNow === 'player') {
-          this.cells[this.whoIsNow.indexCell].classList.remove('selected', 'selected-yellow');
+        if (this.playerNow.whoNow === 'player') {
+          this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow');
         }
         this.selectCell(index, 'yellow');
-        this.whoIsNow.whoNow = 'player';
-        this.whoIsNow.indexCell = index;
-        this.whoIsNow.character = character;
-        this.sellsDetect();
+        this.playerNow.whoNow = 'player';
+        this.playerNow.indexCell = index;
+        this.playerNow.character = character;
+        this.definingMoveCells();
         break;
       case 'enemy':  // if (x === 'value2')
-        if (this.whoIsNow.whoNow === 'start') {
+        if (this.playerNow.whoNow === 'start') {
           this.showError("Для начала выберете своего героя!");
         }
         break;
       default:
-        if (this.whoIsNow.whoNow === 'start') {
+        if (this.playerNow.whoNow === 'start') {
           this.showError("Для начала выберете своего героя!");
         }
         break
@@ -282,28 +297,28 @@ export default class GamePlay {
   }
 
   arrCross( where, what){
+    // проверка вхождение элементов одного массива в другой
     let across = null ;
-
     // console.log('2223== ',where, what);
     for(let i = 0; i < what.length; i += 1){
-      if (where.indexOf(what[i]) > -1) across = what[i];
+      if (where.includes(what[i])) across = what[i];
       if (across) break;
     }
     return across;
   }
 
-  sellsDetect() {
-    // Метод сохраняет в this.whoIsNow.trueSells ячейки разрешенные
-    // к нажатию, для вычисления вида курсора, и возможно еще чего нибудь  
+  definingMoveCells() {
+    // Метод сохраняет в this.playerNow.selsToMove ячейки разрешенные
+    // к нажатию для вычисления вида курсора и возможно еще чего нибудь  
 
     // Мечники/Скелеты - 4 клетки в любом направлении
     // Лучники/Вампиры - 2 клетки в любом направлении
     // Маги/Демоны - 1 клетка в любом направлении
     const tempTrueCells = [];
-    const column = this.whoIsNow.indexCell % this.boardSize;
-    const row = Math.floor(this.whoIsNow.indexCell / this.boardSize);
+    const column = this.playerNow.indexCell % this.boardSize;
+    const row = Math.floor(this.playerNow.indexCell / this.boardSize);
     let step = null;
-    switch(this.whoIsNow.character) {
+    switch(this.playerNow.character) {
       case 'bowman':  // if (x === 'value1')
       step = 2;
         break;
@@ -342,6 +357,6 @@ export default class GamePlay {
         tempTrueCells.push(item.position);
       }
     });
-    this.whoIsNow.trueSells = [...new Set(tempTrueCells)];
+    this.playerNow.selsToMove = [...new Set(tempTrueCells)];
   }
 }

@@ -27,7 +27,7 @@ export default class GameController {
       const position = boardMy[randomIndex];
       const positionedCharacter = new PositionedCharacter(item, position);
       arrPositionCharacter.push(positionedCharacter);
-      this.gamePlay.whoIsNow.trueSells.push(positionedCharacter.position);
+      this.gamePlay.playerNow.selsToMove.push(positionedCharacter.position);
       boardMy.splice(randomIndex, 1);
     });
     // Заполняем ячейки для Противника
