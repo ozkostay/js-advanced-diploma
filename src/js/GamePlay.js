@@ -284,7 +284,7 @@ export default class GamePlay {
   arrCross( where, what){
     let across = null ;
 
-    console.log('2223== ',where, what);
+    // console.log('2223== ',where, what);
     for(let i = 0; i < what.length; i += 1){
       if (where.indexOf(what[i]) > -1) across = what[i];
       if (across) break;
