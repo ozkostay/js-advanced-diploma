@@ -27,7 +27,7 @@ export default class GameController {
       const position = boardMy[randomIndex];
       const positionedCharacter = new PositionedCharacter(item, position);
       arrPositionCharacter.push(positionedCharacter);
-
+      this.gamePlay.whoIsNow.trueSells.push(positionedCharacter.position);
       boardMy.splice(randomIndex, 1);
     });
     // Заполняем ячейки для Противника
@@ -52,7 +52,8 @@ export default class GameController {
     // this.gamePlay.addCellEnterListener(this.onCellEnter);
     
     this.gamePlay.cellEnterListeners = [...arrPositionCharacter];
-    this.gamePlay.redrawPositions(arrPositionCharacter);
+    // this.gamePlay.redrawPositions(arrPositionCharacter);
+    this.gamePlay.redrawPositions(this.gamePlay.cellEnterListeners);
    
     // TODO: load saved stated from stateService
   }
