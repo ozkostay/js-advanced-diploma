@@ -197,9 +197,9 @@ export default class GamePlay {
     let character = 'start';
     // узнаем владельца новой ячейки
     if (event.target.classList.contains('character')) {
-      const arrClasses = event.target.className.split(' ');
-      character = this.arrCross( playerClasses, arrClasses);
-      ownerNewCell = character ? 'player' : 'enemy';
+      const arrClasses = event.target.className.split(' '); // читаем классы новой ячейки
+      character = this.arrCross( playerClasses, arrClasses); // ищем классы игрока в новой яцейке
+      ownerNewCell = character ? 'player' : 'enemy'; // Определили игрок или враг
     }
 
     switch(ownerNewCell) {
@@ -218,6 +218,42 @@ export default class GamePlay {
           this.showError("Для начала выберете своего героя!");
           break;
         }
+        console.log('Бъём врага почем халва');
+        // Находим index игрока
+        // this.playerNow.indexCell;
+
+        // Находим index врага
+        // index
+        console.log(`Атакующий ${this.playerNow.indexCell} враг ${index}`);
+        let attacker;
+        let target;
+        this.cellEnterListeners.forEach((item) => {
+          if (item.position === this.playerNow.indexCell) {
+            attacker = item;
+          } else if (item.position === index) {
+            target = item;
+          }
+        });
+        console.log(`Кто ${attacker.position} кого ${target.position}`);
+        console.log(this.cellEnterListeners);
+        // Расчет ущерба
+        const attackPower = Math.max(attacker.character.attack - target.character.defence, attacker.character.attack * 0.1);
+        console.log('RRR attacker.attack',attacker.character.attack,'target.defence',target.character.defence,'attackPower',attackPower);
+        // Отображение ущерба
+        // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
+        console.log(index);
+        target.character.health -= attackPower;
+        console.log('222', target.character.health);
+        
+        
+        
+        
+        // Здесь доделать удаление замоченного врага
+        if (target.character.health <= 0) {
+          this.cellEnterListeners.splice(index, 1);
+        }
+        console.log('========', this.cellEnterListeners);
+        this.redrawPositions(this.cellEnterListeners); // Рендерим
         break;
       default:
         // Пустая ячейка
@@ -263,7 +299,7 @@ export default class GamePlay {
     alert(message);
   }
 
-  static showMessage(message) {
+  showMessage(message) {
     alert(message);
   }
 
