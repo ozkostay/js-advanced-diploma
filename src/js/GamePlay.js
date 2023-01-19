@@ -171,7 +171,9 @@ export default class GamePlay {
       if (ownerNewCell === 'enemy') {
         this.selectCell(index, 'red');
       } else {
-        this.selectCell(index, 'green');
+        if (index !== this.playerNow.indexCell ) {
+          this.selectCell(index, 'green');
+        }
       }
     }
   }
@@ -180,13 +182,12 @@ export default class GamePlay {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
     this.cellLeaveListeners.forEach(o => o.call(null, index));
-    const classToDel = ['selected', 'selected-yellow',  'selected-green', 'selected-red',]
-    // const sellClasses = this.cells[index].className.split(' ');
+    const classToDel = ['selected', 'selected-green', 'selected-red',]
     classToDel.forEach((item) => {
-      this.cells[index].classList.remove(item);
+      if (!this.cells[index].classList.contains('selected-yellow')) {
+        this.cells[index].classList.remove(item);
+      }
     });
-
-    // this.selectCell(index, 'green');
   }
 
   onCellClick(event) {
@@ -215,13 +216,31 @@ export default class GamePlay {
       case 'enemy':  // if (x === 'value2')
         if (this.playerNow.whoNow === 'start') {
           this.showError("Для начала выберете своего героя!");
+          break;
         }
         break;
       default:
+        // Пустая ячейка
         if (this.playerNow.whoNow === 'start') {
           this.showError("Для начала выберете своего героя!");
+          break;
         }
-        break
+    
+        if (this.playerNow.selsToMove.includes(index)) {
+          // Помещаем игрока в новую ячейку
+          this.cellEnterListeners.forEach((item) => {
+              // console.log('11', item);
+              if (item.position === this.playerNow.indexCell) {
+                item.position = index;
+              }
+          })
+          this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow'); // Удаляем yellow из старой ячейки
+          this.playerNow.indexCell = index; // Тут находим текущего героя и меняем position
+          this.definingMoveCells(); //Вызываем рендер
+          this.selectCell(index, 'yellow');
+          this.redrawPositions(this.cellEnterListeners); // Рендерим
+        }
+        break;
     }
   }
 
