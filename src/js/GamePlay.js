@@ -13,7 +13,12 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
-    this.playerNow = { whoNow: 'start', indexCell: null, character: null, selsToMove: []};
+    this.playerNow = {
+      whoNow: 'start',
+      indexCell: null,
+      character: null,
+      selsToMove: [],
+    };
     this.whoseTurn = 'player';
   }
 
@@ -47,9 +52,9 @@ export default class GamePlay {
     this.saveGameEl = this.container.querySelector('[data-id=action-save]');
     this.loadGameEl = this.container.querySelector('[data-id=action-load]');
 
-    this.newGameEl.addEventListener('click', event => this.onNewGameClick(event));
-    this.saveGameEl.addEventListener('click', event => this.onSaveGameClick(event));
-    this.loadGameEl.addEventListener('click', event => this.onLoadGameClick(event));
+    this.newGameEl.addEventListener('click', (event) => this.onNewGameClick(event));
+    this.saveGameEl.addEventListener('click', (event) => this.onSaveGameClick(event));
+    this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
 
     this.boardEl = this.container.querySelector('[data-id=board]');
 
@@ -57,9 +62,9 @@ export default class GamePlay {
     for (let i = 0; i < this.boardSize ** 2; i += 1) {
       const cellEl = document.createElement('div');
       cellEl.classList.add('cell', 'map-tile', `map-tile-${calcTileType(i, this.boardSize)}`);
-      cellEl.addEventListener('mouseenter', event => this.onCellEnter(event));
-      cellEl.addEventListener('mouseleave', event => this.onCellLeave(event));
-      cellEl.addEventListener('click', event => this.onCellClick(event));
+      cellEl.addEventListener('mouseenter', (event) => this.onCellEnter(event));
+      cellEl.addEventListener('mouseleave', (event) => this.onCellLeave(event));
+      cellEl.addEventListener('click', (event) => this.onCellClick(event));
       this.boardEl.appendChild(cellEl);
     }
 
@@ -158,8 +163,8 @@ export default class GamePlay {
     this.cellEnterListeners.forEach((item) => {
       if (item.position === index) {
         this.showCellTooltip(this.makeTitle(item.character), index);
-        const arrClasses = event.target.firstChild.className.split(' ');;
-        ownerNewCell = this.arrCross( playerClasses, arrClasses) ? 'player' : 'enemy';
+        const arrClasses = event.target.firstChild.className.split(' ');
+        ownerNewCell = this.arrCross(playerClasses, arrClasses) ? 'player' : 'enemy';
         if (ownerNewCell !== 'player') {
           this.setCursor(cursors.crosshair);
         }
@@ -167,22 +172,18 @@ export default class GamePlay {
     });
     if (!this.playerNow.selsToMove.includes(index)) {
       this.setCursor(cursors.notallowed);
-    } else {
-      if (ownerNewCell === 'enemy') {
-        this.selectCell(index, 'red');
-      } else {
-        if (index !== this.playerNow.indexCell ) {
-          this.selectCell(index, 'green');
-        }
-      }
+    } else if (ownerNewCell === 'enemy') {
+      this.selectCell(index, 'red');
+    } else if (index !== this.playerNow.indexCell ) {
+      this.selectCell(index, 'green');
     }
   }
 
   onCellLeave(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellLeaveListeners.forEach(o => o.call(null, index));
-    const classToDel = ['selected', 'selected-green', 'selected-red',]
+    this.cellLeaveListeners.forEach((o) => o.call(null, index));
+    const classToDel = ['selected', 'selected-green', 'selected-red'];
     classToDel.forEach((item) => {
       if (!this.cells[index].classList.contains('selected-yellow')) {
         this.cells[index].classList.remove(item);
@@ -195,15 +196,17 @@ export default class GamePlay {
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     let ownerNewCell = 'nobody'; // здесь владелец новой ячейки
     let character = 'start';
+    let attacker;
+    let target;
+    let attackPower;
     // узнаем владельца новой ячейки
     if (event.target.classList.contains('character')) {
       const arrClasses = event.target.className.split(' '); // читаем классы новой ячейки
-      character = this.arrCross( playerClasses, arrClasses); // ищем классы игрока в новой яцейке
+      character = this.arrCross(playerClasses, arrClasses); // ищем классы игрока в новой яцейке
       ownerNewCell = character ? 'player' : 'enemy'; // Определили игрок или враг
     }
-
-    switch(ownerNewCell) {
-      case 'player':  // if (x === 'value1')
+    switch (ownerNewCell) {
+      case 'player':
         if (this.playerNow.whoNow === 'player') {
           this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow');
         }
@@ -213,20 +216,18 @@ export default class GamePlay {
         this.playerNow.character = character;
         this.definingMoveCells();
         break;
-      case 'enemy':  // if (x === 'value2')
+      case 'enemy':
         if (this.playerNow.whoNow === 'start') {
-          this.showError("Для начала выберете своего героя!");
+          this.showError('Для начала выберете своего героя!');
           break;
         }
-        console.log('Бъём врага почем халва');
+        // console.log('Бъём врага почем халва');
         // Находим index игрока
         // this.playerNow.indexCell;
 
         // Находим index врага
         // index
         console.log(`Атакующий ${this.playerNow.indexCell} враг ${index}`);
-        let attacker;
-        let target;
         this.cellEnterListeners.forEach((item) => {
           if (item.position === this.playerNow.indexCell) {
             attacker = item;
@@ -237,8 +238,9 @@ export default class GamePlay {
         console.log(`Кто ${attacker.position} кого ${target.position}`);
         console.log(this.cellEnterListeners);
         // Расчет ущерба
-        const attackPower = Math.max(attacker.character.attack - target.character.defence, attacker.character.attack * 0.1);
-        console.log('RRR attacker.attack',attacker.character.attack,'target.defence',target.character.defence,'attackPower',attackPower);
+        attackPower = Math.max(attacker.character.attack
+          - target.character.defence, attacker.character.attack * 0.1);
+        console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
         // Отображение ущерба
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         console.log(index);
@@ -247,10 +249,15 @@ export default class GamePlay {
         
         
         
-        
         // Здесь доделать удаление замоченного врага
         if (target.character.health <= 0) {
-          this.cellEnterListeners.splice(index, 1);
+          let indexToDel;
+          this.cellEnterListeners.forEach((item, indexCell) => {
+            if (item.position === index) {
+              indexToDel = indexCell;
+            }
+          });
+          this.cellEnterListeners.splice(indexToDel, 1);
         }
         console.log('========', this.cellEnterListeners);
         this.redrawPositions(this.cellEnterListeners); // Рендерим
@@ -258,21 +265,21 @@ export default class GamePlay {
       default:
         // Пустая ячейка
         if (this.playerNow.whoNow === 'start') {
-          this.showError("Для начала выберете своего героя!");
+          this.showError('Для начала выберете своего героя!');
           break;
         }
-    
+
         if (this.playerNow.selsToMove.includes(index)) {
           // Помещаем игрока в новую ячейку
           this.cellEnterListeners.forEach((item) => {
-              // console.log('11', item);
-              if (item.position === this.playerNow.indexCell) {
-                item.position = index;
-              }
-          })
+            // console.log('11', item);
+            if (item.position === this.playerNow.indexCell) {
+              item.position = index; // вопрос по lint
+            }
+          });
           this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow'); // Удаляем yellow из старой ячейки
           this.playerNow.indexCell = index; // Тут находим текущего героя и меняем position
-          this.definingMoveCells(); //Вызываем рендер
+          this.definingMoveCells(); // Вызываем рендер
           this.selectCell(index, 'yellow');
           this.redrawPositions(this.cellEnterListeners); // Рендерим
         }
@@ -282,26 +289,26 @@ export default class GamePlay {
 
   onNewGameClick(event) {
     event.preventDefault();
-    this.newGameListeners.forEach(o => o.call(null));
+    this.newGameListeners.forEach((o) => o.call(null));
   }
 
   onSaveGameClick(event) {
     event.preventDefault();
-    this.saveGameListeners.forEach(o => o.call(null));
+    this.saveGameListeners.forEach((o) => o.call(null));
   }
 
   onLoadGameClick(event) {
     event.preventDefault();
-    this.loadGameListeners.forEach(o => o.call(null));
+    this.loadGameListeners.forEach((o) => o.call(null));
   }
 
-  showError(message) {
-    alert(message);
-  }
+  // showError(message) {
+  //   alert(message);
+  // }
 
-  showMessage(message) {
-    alert(message);
-  }
+  // showMessage(message) {
+  //   alert(message);
+  // }
 
   selectCell(index, color = 'yellow') {
     this.deselectCell(index);
@@ -311,7 +318,7 @@ export default class GamePlay {
   deselectCell(index) {
     const cell = this.cells[index];
     cell.classList.remove(...Array.from(cell.classList)
-      .filter(o => o.startsWith('selected')));
+      .filter((o) => o.startsWith('selected')));
   }
 
   showCellTooltip(message, index) {
@@ -348,14 +355,14 @@ export default class GamePlay {
   }
 
   makeTitle(c) {
-    return `🎖️ ${c.level} ⚔️ ${c.attack} 🛡️ ${c.defence} ❤️ ${c.health}`;
+    return `🎖️ ${c.level} ⚔️ ${c.attack} 🛡️ ${c.defence} ❤️ ${c.health}`; // вопрос по lint
   }
 
-  arrCross( where, what){
+  arrCross(where, what) { // вопрос по lint
     // проверка вхождение элементов одного массива в другой
-    let across = null ;
+    let across = null;
     // console.log('2223== ',where, what);
-    for(let i = 0; i < what.length; i += 1){
+    for (let i = 0; i < what.length; i += 1) {
       if (where.includes(what[i])) across = what[i];
       if (across) break;
     }
@@ -364,7 +371,7 @@ export default class GamePlay {
 
   definingMoveCells() {
     // Метод сохраняет в this.playerNow.selsToMove ячейки разрешенные
-    // к нажатию для вычисления вида курсора и возможно еще чего нибудь  
+    // к нажатию для вычисления вида курсора и возможно еще чего нибудь
 
     // Мечники/Скелеты - 4 клетки в любом направлении
     // Лучники/Вампиры - 2 клетки в любом направлении
@@ -373,28 +380,26 @@ export default class GamePlay {
     const column = this.playerNow.indexCell % this.boardSize;
     const row = Math.floor(this.playerNow.indexCell / this.boardSize);
     let step = null;
-    switch(this.playerNow.character) {
-      case 'bowman':  // if (x === 'value1')
-      step = 2;
+    switch (this.playerNow.character) {
+      case 'bowman':
+        step = 2;
         break;
-      case 'swordsman':  // if (x === 'value2')
-      step = 4;
+      case 'swordsman':
+        step = 4;
         break;
-    
       default:
         // magician
         step = 1;
-        break
+        break;
     }
-    
     const columsTrue = [];
-    for (let i = column - step; i < column + step +1; i += 1) {
+    for (let i = column - step; i < column + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         columsTrue.push(i);
       }
     }
     const rowsTrue = [];
-    for (let i = row - step; i < row + step +1; i += 1) {
+    for (let i = row - step; i < row + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         rowsTrue.push(i);
       }
