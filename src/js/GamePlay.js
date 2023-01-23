@@ -240,16 +240,25 @@ export default class GamePlay {
         // Расчет ущерба
         attackPower = Math.max(attacker.character.attack
           - target.character.defence, attacker.character.attack * 0.1);
-        console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
+        
+        
+        this.showDamage(index, attackPower)
+          .then( function (response) {
+            console.log('response', response)
+          });
+        
+        
+        
+        
+        
+        
+          console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
         // Отображение ущерба
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         console.log(index);
         target.character.health -= attackPower;
         console.log('222', target.character.health);
-        
-        
-        
-        // Здесь доделать удаление замоченного врага
+        // Удаление замоченного врага
         if (target.character.health <= 0) {
           let indexToDel;
           this.cellEnterListeners.forEach((item, indexCell) => {
@@ -263,7 +272,7 @@ export default class GamePlay {
         this.redrawPositions(this.cellEnterListeners); // Рендерим
         break;
       default:
-        // Пустая ячейка
+        // Если пустая ячейка
         if (this.playerNow.whoNow === 'start') {
           this.showError('Для начала выберете своего героя!');
           break;
@@ -302,9 +311,9 @@ export default class GamePlay {
     this.loadGameListeners.forEach((o) => o.call(null));
   }
 
-  // showError(message) {
-  //   alert(message);
-  // }
+  showError(message) {
+    alert(message);
+  }
 
   // showMessage(message) {
   //   alert(message);
@@ -336,11 +345,13 @@ export default class GamePlay {
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
       cell.appendChild(damageEl);
+      console.log('Responssssssssssssssssssss');
 
-      damageEl.addEventListener('animationend', () => {
-        cell.removeChild(damageEl);
-        resolve();
-      });
+      // damageEl.addEventListener('animationend', () => {
+      //   cell.removeChild(damageEl);
+      //   resolve();
+      // });
+      resolve();
     });
   }
 
