@@ -18,8 +18,9 @@ export default class GamePlay {
       indexCell: null,
       character: null,
       selsToMove: [],
+      selsToAttack: [],
     };
-    this.whoseTurn = 'player';
+    // this.whoseTurn = 'player';
   }
 
   bindToDOM(container) {
@@ -158,31 +159,44 @@ export default class GamePlay {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
     const playerClasses = ['bowman', 'swordsman', 'magician'];
-    let ownerNewCell;
-    this.setCursor(cursors.pointer);
-    this.cellEnterListeners.forEach((item) => {
-      if (item.position === index) {
-        this.showCellTooltip(this.makeTitle(item.character), index);
-        const arrClasses = event.target.firstChild.className.split(' ');
-        ownerNewCell = this.arrCross(playerClasses, arrClasses) ? 'player' : 'enemy';
-        if (ownerNewCell !== 'player') {
-          this.setCursor(cursors.crosshair);
-        }
+    let ownerNewCell = null;
+    const inListeners = this.cellEnterListeners.filter((i) => i.position === index); 
+    if (inListeners.length > 0) {
+      if (playerClasses.includes(inListeners[0].character.type)) {
+        ownerNewCell = 'player';
+      } else {
+        ownerNewCell = 'enemy';
       }
-    });
-    if (!this.playerNow.selsToMove.includes(index)) {
-      this.setCursor(cursors.notallowed);
-    } else if (ownerNewCell === 'enemy') {
-      this.selectCell(index, 'red');
-    } else if (index !== this.playerNow.indexCell ) {
-      this.selectCell(index, 'green');
+    }
+    switch (ownerNewCell) {
+      case 'player':
+        this.setCursor(cursors.pointer);
+        this.selectCell(index, 'green');
+        break;
+      case 'enemy':
+        if (this.playerNow.selsToAttack.includes(index)) {
+          this.setCursor(cursors.crosshair);
+          this.selectCell(index, 'red');
+        } else {
+          this.setCursor(cursors.notallowed);
+        }
+        break;
+      default:
+        // null (Empty sell)
+        if (this.playerNow.selsToMove.includes(index)) {
+          this.setCursor(cursors.pointer);
+          this.selectCell(index, 'green');
+        } else {
+          this.setCursor(cursors.notallowed);
+        }
+        break;
     }
   }
 
   onCellLeave(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellLeaveListeners.forEach((o) => o.call(null, index));
+    // this.cellLeaveListeners.forEach((o) => o.call(null, index));
     const classToDel = ['selected', 'selected-green', 'selected-red'];
     classToDel.forEach((item) => {
       if (!this.cells[index].classList.contains('selected-yellow')) {
@@ -215,19 +229,21 @@ export default class GamePlay {
         this.playerNow.indexCell = index;
         this.playerNow.character = character;
         this.definingMoveCells();
+        this.definingAttackCells();
+        // console.log('777777', this.playerNow);
         break;
       case 'enemy':
         if (this.playerNow.whoNow === 'start') {
           this.showError('Для начала выберете своего героя!');
           break;
         }
-        // console.log('Бъём врага почем халва');
-        // Находим index игрока
-        // this.playerNow.indexCell;
+        // Если враг вне зоны атаки - выходим
+        if (!this.playerNow.selsToAttack.includes(index)) {
+          return;
+        }
 
-        // Находим index врага
-        // index
-        console.log(`Атакующий ${this.playerNow.indexCell} враг ${index}`);
+        // console.log(`Атакующий ${this.playerNow.indexCell} враг ${index}`);
+        // console.log('Бъём врага почем халва');
         this.cellEnterListeners.forEach((item) => {
           if (item.position === this.playerNow.indexCell) {
             attacker = item;
@@ -235,26 +251,20 @@ export default class GamePlay {
             target = item;
           }
         });
-        console.log(`Кто ${attacker.position} кого ${target.position}`);
-        console.log(this.cellEnterListeners);
+        // console.log(`Кто ${attacker.position} кого ${target.position}`);
+        // console.log(this.cellEnterListeners);
         // Расчет ущерба
         attackPower = Math.max(attacker.character.attack
           - target.character.defence, attacker.character.attack * 0.1);
-        
-        
-        // this.showDamage(index, attackPower)
-        //   .then((response) => {
-        //     console.log('====== response', response);
-        //   });
-        
-        this.showDamage2(index, attackPower)
-        
-        console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
-        // Отображение ущерба
+        // Отображаем ущерб
+        this.showDamage(index, attackPower)
+          .then((response) => {
+            console.log('====== response', response);
+          });
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
-        console.log(index);
+        // console.log(index);
         target.character.health -= attackPower;
-        console.log('222', target.character.health);
+        // console.log('222', target.character.health);
         // Удаление замоченного врага
         if (target.character.health <= 0) {
           let indexToDel;
@@ -265,7 +275,7 @@ export default class GamePlay {
           });
           this.cellEnterListeners.splice(indexToDel, 1);
         }
-        console.log('========', this.cellEnterListeners);
+        // console.log('========', this.cellEnterListeners);
         this.redrawPositions(this.cellEnterListeners); // Рендерим
         break;
       default:
@@ -285,12 +295,15 @@ export default class GamePlay {
           });
           this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow'); // Удаляем yellow из старой ячейки
           this.playerNow.indexCell = index; // Тут находим текущего героя и меняем position
-          this.definingMoveCells(); // Вызываем рендер
+          this.definingMoveCells();
+          this.definingAttackCells();
           this.selectCell(index, 'yellow');
           this.redrawPositions(this.cellEnterListeners); // Рендерим
         }
         break;
     }
+    // Ответный ход врага
+    this.enemysMove(ownerNewCell === 'enemy' ? index : null);
   }
 
   onNewGameClick(event) {
@@ -312,9 +325,9 @@ export default class GamePlay {
     alert(message);
   }
 
-  // showMessage(message) {
-  //   alert(message);
-  // }
+  showMessage(message) {
+    alert(message);
+  }
 
   selectCell(index, color = 'yellow') {
     this.deselectCell(index);
@@ -335,26 +348,6 @@ export default class GamePlay {
     this.cells[index].title = '';
   }
 
-  showDamage2(index, damage) {
-    //return new Promise((resolve) => {
-      const cell = this.cells[index];
-      cell.classList.add('kkk');
-      const damageEl = document.createElement('span');
-      damageEl.textContent = damage;
-      // damageEl.classList.add('damage', 'kkk');
-      damageEl.classList.add( 'kkk');
-      cell.appendChild(damageEl);
-      //console.log('Responssssss index', index, 'damage ', damage);
-      console.log('Responssssss cell', cell);
-
-      // damageEl.addEventListener('animationend', () => {
-      //   cell.removeChild(damageEl);
-      //   console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
-      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
-      // });
-      //resolve('showDamage ===============');
-  };
-
   showDamage(index, damage) {
     return new Promise((resolve) => {
       const cell = this.cells[index];
@@ -370,7 +363,7 @@ export default class GamePlay {
       //   console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
       //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
       // });
-      resolve('showDamage ===============');
+      resolve('nеуые showDamage');
     });
   }
 
@@ -397,6 +390,42 @@ export default class GamePlay {
       if (across) break;
     }
     return across;
+  }
+
+  enemysMove(enemyIndex) {
+    console.log('enemysMove', enemyIndex, 'My', this.playerNow);
+    
+    const enemiesNames = ['daemon', 'undead', 'vampire'] ;
+    let attacker = null;
+    let target = null;
+    const arrEnemies = this.cellEnterListeners.filter((item) => enemiesNames.includes(item.character.type));
+    console.log('Длина массива Врагов', arrEnemies.length);
+    // Если врагов не осталось, переход на новый уровень
+    if(arrEnemies.length < 1) {
+      console.log('Враг полностью повержен!!!!!!!! ');
+      // Здесь Переход на новый уровень
+      return;
+    }
+    
+    if (enemyIndex) {
+      // Если враг в ячейке еще жив назначаем выбераем его иначе любого другого
+      for (let item in arrEnemies) {
+        console.log('item', arrEnemies[item]);
+        attacker = arrEnemies[item];
+        if (attacker.position === enemyIndex) {
+          break;
+        }
+      }
+    }
+    
+    // Если в ячейке this.playerNow жив игрок, то атакуем его
+    const player = this.cellEnterListeners.filter((item) => item.position === this.playerNow.indexCell);
+    console.log('Враг',attacker,'Игрок',player[0])
+    // !!!!!!!!!!! this.playerNow.indexCell
+    // Нет, значит ищем доступного в радиусе и атакуем
+    // Нет делаем ход
+
+    // const target
   }
 
   definingMoveCells() {
@@ -449,4 +478,58 @@ export default class GamePlay {
     });
     this.playerNow.selsToMove = [...new Set(tempTrueCells)];
   }
+
+  definingAttackCells() {
+    // Метод сохраняет в this.playerNow.selsToMove ячейки разрешенные
+    // к нажатию для вычисления вида курсора и возможно еще чего нибудь
+
+    // Мечники/Скелеты - 4 клетки в любом направлении
+    // Лучники/Вампиры - 2 клетки в любом направлении
+    // Маги/Демоны - 1 клетка в любом направлении
+    const tempTrueCells = [];
+    const column = this.playerNow.indexCell % this.boardSize;
+    const row = Math.floor(this.playerNow.indexCell / this.boardSize);
+    let step = null;
+    switch (this.playerNow.character) {
+      case 'bowman':
+        step = 2;
+        break;
+      case 'swordsman':
+        step = 1;
+        break;
+      default:
+        // magician
+        step = 4;
+        break;
+    }
+    const columsTrue = [];
+    for (let i = column - step; i < column + step + 1; i += 1) {
+      if ((i >= 0) && (i < 8)) {
+        columsTrue.push(i);
+      }
+    }
+
+    const rowsTrue = [];
+    for (let i = row - step; i < row + step + 1; i += 1) {
+      if ((i >= 0) && (i < 8)) {
+        rowsTrue.push(i);
+      }
+    }
+    this.cells.forEach((item, index) => {
+      const rowCells = Math.floor(index / this.boardSize);
+      const colCells = index % this.boardSize;
+      if (rowsTrue.indexOf(rowCells) >= 0 && columsTrue.indexOf(colCells) >= 0) {
+        tempTrueCells.push(index);
+      }
+    });
+    const playerTypes = ['bowman', 'swordsman', 'magician'];
+    this.cellEnterListeners.forEach((item) => {
+      if (playerTypes.includes(item.character.type)) {
+        tempTrueCells.push(item.position);
+      }
+    });
+    console.log('0000000000=== ', tempTrueCells);
+    this.playerNow.selsToAttack = [...new Set(tempTrueCells)];
+  }
+  
 }
