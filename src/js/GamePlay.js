@@ -242,17 +242,14 @@ export default class GamePlay {
           - target.character.defence, attacker.character.attack * 0.1);
         
         
-        this.showDamage(index, attackPower)
-          .then( function (response) {
-            console.log('response', response)
-          });
+        // this.showDamage(index, attackPower)
+        //   .then((response) => {
+        //     console.log('====== response', response);
+        //   });
         
+        this.showDamage2(index, attackPower)
         
-        
-        
-        
-        
-          console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
+        console.log('RRR attacker.attack', attacker.character.attack, 'target.defence', target.character.defence, 'attackPower', attackPower);
         // Отображение ущерба
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         console.log(index);
@@ -338,6 +335,26 @@ export default class GamePlay {
     this.cells[index].title = '';
   }
 
+  showDamage2(index, damage) {
+    //return new Promise((resolve) => {
+      const cell = this.cells[index];
+      cell.classList.add('kkk');
+      const damageEl = document.createElement('span');
+      damageEl.textContent = damage;
+      // damageEl.classList.add('damage', 'kkk');
+      damageEl.classList.add( 'kkk');
+      cell.appendChild(damageEl);
+      //console.log('Responssssss index', index, 'damage ', damage);
+      console.log('Responssssss cell', cell);
+
+      // damageEl.addEventListener('animationend', () => {
+      //   cell.removeChild(damageEl);
+      //   console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
+      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
+      // });
+      //resolve('showDamage ===============');
+  };
+
   showDamage(index, damage) {
     return new Promise((resolve) => {
       const cell = this.cells[index];
@@ -345,13 +362,15 @@ export default class GamePlay {
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
       cell.appendChild(damageEl);
-      console.log('Responssssssssssssssssssss');
+      console.log('Responssssss index', index, 'damage ', damage);
+      console.log('Responssssss cell', cell);
 
       // damageEl.addEventListener('animationend', () => {
       //   cell.removeChild(damageEl);
-      //   resolve();
+      //   console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
+      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
       // });
-      resolve();
+      resolve('showDamage ===============');
     });
   }
 

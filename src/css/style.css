@@ -237,7 +237,7 @@ body {
   z-index: 999;
   color: #f00;
   font-weight: bold;
-  animation: 500ms fade ease-out;
+  /* animation: 5000ms fade ease-out; */
 }
 
 @keyframes fade {
