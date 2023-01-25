@@ -20,6 +20,12 @@ export default class GamePlay {
       selsToMove: [],
       selsToAttack: [],
     };
+    this.enemyNow = {
+      indexCell: null,
+      character: null,
+      selsToMove: [],
+      selsToAttack: [],
+    };
     // this.whoseTurn = 'player';
   }
 
@@ -161,13 +167,16 @@ export default class GamePlay {
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     let ownerNewCell = null;
     const inListeners = this.cellEnterListeners.filter((i) => i.position === index); 
+    // Проверка на наличие кого либо
     if (inListeners.length > 0) {
+      this.showCellTooltip(this.makeTitle(inListeners[0].character), index); // вывод характеристик
       if (playerClasses.includes(inListeners[0].character.type)) {
         ownerNewCell = 'player';
       } else {
         ownerNewCell = 'enemy';
       }
     }
+    // Действие по содержимому ячейки
     switch (ownerNewCell) {
       case 'player':
         this.setCursor(cursors.pointer);
@@ -228,8 +237,8 @@ export default class GamePlay {
         this.playerNow.whoNow = 'player';
         this.playerNow.indexCell = index;
         this.playerNow.character = character;
-        this.definingMoveCells();
-        this.definingAttackCells();
+        this.definingMoveCells('player');
+        this.definingAttackCells('player');
         // console.log('777777', this.playerNow);
         break;
       case 'enemy':
@@ -259,6 +268,7 @@ export default class GamePlay {
         // Отображаем ущерб
         this.showDamage(index, attackPower)
           .then((response) => {
+            this.redrawPositions(this.cellEnterListeners);
             console.log('====== response', response);
           });
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
@@ -295,15 +305,17 @@ export default class GamePlay {
           });
           this.cells[this.playerNow.indexCell].classList.remove('selected', 'selected-yellow'); // Удаляем yellow из старой ячейки
           this.playerNow.indexCell = index; // Тут находим текущего героя и меняем position
-          this.definingMoveCells();
-          this.definingAttackCells();
+          this.definingMoveCells('player');
+          this.definingAttackCells('player');
           this.selectCell(index, 'yellow');
           this.redrawPositions(this.cellEnterListeners); // Рендерим
         }
         break;
     }
     // Ответный ход врага
-    this.enemysMove(ownerNewCell === 'enemy' ? index : null);
+    if (ownerNewCell != 'player') {
+      this.enemysMove(ownerNewCell === 'enemy' ? index : null);
+    }
   }
 
   onNewGameClick(event) {
@@ -355,15 +367,15 @@ export default class GamePlay {
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
       cell.appendChild(damageEl);
-      console.log('Responssssss index', index, 'damage ', damage);
+      // console.log('Responssssss index', index, 'damage ', damage);
       console.log('Responssssss cell', cell);
 
-      // damageEl.addEventListener('animationend', () => {
-      //   cell.removeChild(damageEl);
-      //   console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
-      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
-      // });
-      resolve('nеуые showDamage');
+      damageEl.addEventListener('animationend', () => {
+        cell.removeChild(damageEl);
+        console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
+        resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
+      });
+      //resolve('nеуые showDamage');
     });
   }
 
@@ -393,13 +405,14 @@ export default class GamePlay {
   }
 
   enemysMove(enemyIndex) {
-    console.log('enemysMove', enemyIndex, 'My', this.playerNow);
+    // console.log('enemysMove', enemyIndex, 'My', this.playerNow);
     
     const enemiesNames = ['daemon', 'undead', 'vampire'] ;
     let attacker = null;
     let target = null;
+    // Создаем массив врагов
     const arrEnemies = this.cellEnterListeners.filter((item) => enemiesNames.includes(item.character.type));
-    console.log('Длина массива Врагов', arrEnemies.length);
+    // console.log('Длина массива Врагов', arrEnemies.length);
     // Если врагов не осталось, переход на новый уровень
     if(arrEnemies.length < 1) {
       console.log('Враг полностью повержен!!!!!!!! ');
@@ -407,39 +420,85 @@ export default class GamePlay {
       return;
     }
     
-    if (enemyIndex) {
-      // Если враг в ячейке еще жив назначаем выбераем его иначе любого другого
-      for (let item in arrEnemies) {
-        console.log('item', arrEnemies[item]);
-        attacker = arrEnemies[item];
-        if (attacker.position === enemyIndex) {
-          break;
-        }
+    
+    // Если враг в ячейке еще жив назначаем выбераем его иначе любого другого
+    for (let i in arrEnemies) {
+      // console.log('item', arrEnemies[i]);
+      attacker = arrEnemies[i];
+      if (attacker.position === enemyIndex) {
+        break;
+      }
+    }
+     
+    // Определяем допустимые ячейки передвижения и атаки для врага
+    this.enemyNow.indexCell = attacker.position;
+    this.enemyNow.character = attacker.character.type;
+    this.definingMoveCells('enemy');
+    this.definingAttackCells('enemy');
+    
+    // выбераю всех союзников
+    const arrPlayersAll = this.cellEnterListeners.filter((item) => !enemiesNames.includes(item.character.type));
+    // выбераю тех кто в зоне атаки
+    const arrPlayersToAttack = arrPlayersAll.filter((item) => this.enemyNow.selsToAttack.includes(item.position));
+    // Выбераем последнего героя если есть в arrPlayersToAttack
+    // Иначе последнего в массиве
+    for (let i in arrPlayersToAttack) {
+      // console.log('Атакуемый игрок', arrPlayersToAttack[i]);
+      target = arrPlayersToAttack[i];
+      if (target.position === this.playerNow.indexCell) {
+        break;
       }
     }
     
-    // Если в ячейке this.playerNow жив игрок, то атакуем его
-    const player = this.cellEnterListeners.filter((item) => item.position === this.playerNow.indexCell);
-    console.log('Враг',attacker,'Игрок',player[0])
-    // !!!!!!!!!!! this.playerNow.indexCell
-    // Нет, значит ищем доступного в радиусе и атакуем
-    // Нет делаем ход
+    console.log('Враг',attacker,'Игрок',target);
+    // console.log('this.enemyNow', this.enemyNow);
+    // console.log('arrPlayers', arrPlayers);
+    // console.log('arrPlayersToAttack', arrPlayersToAttack);
+    
+    // Выделяем ячейки без characters для хода
+    const characterIndex = this.cellEnterListeners.map((item) => item.position);
+    const arrToMove = this.enemyNow.selsToMove.filter((item) => !characterIndex.includes(item));
+    console.log('this.enemyNow.selsToMove', this.enemyNow.selsToMove,'arrToMove', arrToMove);
+    if (target) {
+      // Атакуем
+      console.log('Враг Атаковал!!!');
+    } else {
+      // Делаем ход на случайную ячейку из разрешенных
+      let moveIndex = Math.floor(Math.random() * arrToMove.length);
+      console.log('Переходим на ячейку ', moveIndex);
+      this.cellEnterListeners.forEach((item) => {
+        if (item.position === this.enemyNow.indexCell) {
+          item.position = arrToMove[moveIndex];
+        }
+      });
+      this.redrawPositions(this.cellEnterListeners); // Рендерим
+      //console.log('ИНДЕКС ', arrToMove[moveIndex]);
 
-    // const target
+    }
   }
 
-  definingMoveCells() {
-    // Метод сохраняет в this.playerNow.selsToMove ячейки разрешенные
-    // к нажатию для вычисления вида курсора и возможно еще чего нибудь
-
+  definingMoveCells(param) {
+    // Метод сохраняет в this.playerNow.selsToMove и this.enemyNow.selsToMove разрешенные ячейки
     // Мечники/Скелеты - 4 клетки в любом направлении
     // Лучники/Вампиры - 2 клетки в любом направлении
     // Маги/Демоны - 1 клетка в любом направлении
     const tempTrueCells = [];
-    const column = this.playerNow.indexCell % this.boardSize;
-    const row = Math.floor(this.playerNow.indexCell / this.boardSize);
+    const playerTypes = ['bowman', 'swordsman', 'magician'];
     let step = null;
-    switch (this.playerNow.character) {
+    const who = param === 'player' ? this.playerNow : this.enemyNow; // Кто в параметре враг или Игрок
+    const column = who.indexCell % this.boardSize;
+    const row = Math.floor(who.indexCell / this.boardSize);
+    
+    switch (who.character) {
+      case 'daemon':
+        step = 1;
+        break;
+      case 'undead':
+        step = 4;
+        break;
+      case 'vampire':
+        step = 2;
+        break;
       case 'bowman':
         step = 2;
         break;
@@ -451,18 +510,21 @@ export default class GamePlay {
         step = 1;
         break;
     }
+    // Определяем допустимые колонки
     const columsTrue = [];
     for (let i = column - step; i < column + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         columsTrue.push(i);
       }
     }
+    // Определяем допустимые строки
     const rowsTrue = [];
     for (let i = row - step; i < row + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         rowsTrue.push(i);
       }
     }
+    // Выбераем пересечение в массивах
     this.cells.forEach((item, index) => {
       const rowCells = Math.floor(index / this.boardSize);
       const colCells = index % this.boardSize;
@@ -470,27 +532,38 @@ export default class GamePlay {
         tempTrueCells.push(index);
       }
     });
-    const playerTypes = ['bowman', 'swordsman', 'magician'];
-    this.cellEnterListeners.forEach((item) => {
-      if (playerTypes.includes(item.character.type)) {
-        tempTrueCells.push(item.position);
-      }
-    });
-    this.playerNow.selsToMove = [...new Set(tempTrueCells)];
+    // Если игрок - добавляем союзников для смены игрока
+    if (param === 'player') {
+      this.cellEnterListeners.forEach((item) => {
+        if (playerTypes.includes(item.character.type)) {
+          tempTrueCells.push(item.position);
+        }
+      });
+    }
+    who.selsToMove = [...new Set(tempTrueCells)];
   }
 
-  definingAttackCells() {
-    // Метод сохраняет в this.playerNow.selsToMove ячейки разрешенные
-    // к нажатию для вычисления вида курсора и возможно еще чего нибудь
-
-    // Мечники/Скелеты - 4 клетки в любом направлении
+  definingAttackCells(param) {
+    // Метод сохраняет в this.playerNow.selsToAttack и this.enemyNow.selsToAttack разрешенные ячейки
+    // Мечники/Скелеты - 1 клетки в любом направлении
     // Лучники/Вампиры - 2 клетки в любом направлении
-    // Маги/Демоны - 1 клетка в любом направлении
+    // Маги/Демоны - 4 клетка в любом направлении
     const tempTrueCells = [];
-    const column = this.playerNow.indexCell % this.boardSize;
-    const row = Math.floor(this.playerNow.indexCell / this.boardSize);
     let step = null;
-    switch (this.playerNow.character) {
+    const who = param === 'player' ? this.playerNow : this.enemyNow; // Кто в параметре враг или Игрок
+    const column = who.indexCell % this.boardSize;
+    const row = Math.floor(who.indexCell / this.boardSize);
+    
+    switch (who.character) {
+      case 'daemon':
+        step = 4;
+        break;
+      case 'undead':
+        step = 1;
+        break;
+      case 'vampire':
+        step = 2;
+        break;
       case 'bowman':
         step = 2;
         break;
@@ -502,19 +575,21 @@ export default class GamePlay {
         step = 4;
         break;
     }
+    // Определяем допустимые колонки
     const columsTrue = [];
     for (let i = column - step; i < column + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         columsTrue.push(i);
       }
     }
-
+    // Определяем допустимые строки
     const rowsTrue = [];
     for (let i = row - step; i < row + step + 1; i += 1) {
       if ((i >= 0) && (i < 8)) {
         rowsTrue.push(i);
       }
     }
+    // Выбераем пересечение в массивах
     this.cells.forEach((item, index) => {
       const rowCells = Math.floor(index / this.boardSize);
       const colCells = index % this.boardSize;
@@ -522,14 +597,8 @@ export default class GamePlay {
         tempTrueCells.push(index);
       }
     });
-    const playerTypes = ['bowman', 'swordsman', 'magician'];
-    this.cellEnterListeners.forEach((item) => {
-      if (playerTypes.includes(item.character.type)) {
-        tempTrueCells.push(item.position);
-      }
-    });
-    console.log('0000000000=== ', tempTrueCells);
-    this.playerNow.selsToAttack = [...new Set(tempTrueCells)];
+
+    // console.log('0000000000=== ', tempTrueCells);
+    who.selsToAttack = [...new Set(tempTrueCells)];
   }
-  
 }
