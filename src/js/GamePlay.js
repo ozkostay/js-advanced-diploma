@@ -265,13 +265,20 @@ export default class GamePlay {
         // Расчет ущерба
         attackPower = Math.max(attacker.character.attack
           - target.character.defence, attacker.character.attack * 0.1);
+        
+        
+        
         // Отображаем ущерб
         this.showDamage(index, attackPower)
           .then((response) => {
-            this.redrawPositions(this.cellEnterListeners);
+            // setTimeout( this.redrawPositions(this.cellEnterListeners), 1000);
             console.log('====== response', response);
           });
-        // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
+        // const aaa = this.redrawPositions(this.cellEnterListeners);
+        // this.showDamage(index, attackPower);
+        // setTimeout( aaa, 500); // Рендерим
+          
+          // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         // console.log(index);
         target.character.health -= attackPower;
         // console.log('222', target.character.health);
@@ -286,7 +293,7 @@ export default class GamePlay {
           this.cellEnterListeners.splice(indexToDel, 1);
         }
         // console.log('========', this.cellEnterListeners);
-        this.redrawPositions(this.cellEnterListeners); // Рендерим
+        
         break;
       default:
         // Если пустая ячейка
@@ -366,16 +373,23 @@ export default class GamePlay {
       const damageEl = document.createElement('span');
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
-      cell.appendChild(damageEl);
+      
+      cell.appendChild(damageEl); // '<span class="damage">30</span>'
+      // cell.insertAdjacentHTML('beforeend', '<span class="damage">30</span>');
+
+
+
+      console.log('damageEl', damageEl);
       // console.log('Responssssss index', index, 'damage ', damage);
       console.log('Responssssss cell', cell);
 
-      damageEl.addEventListener('animationend', () => {
-        cell.removeChild(damageEl);
-        console.log('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ');
-        resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
-      });
-      //resolve('nеуые showDamage');
+      // damageEl.addEventListener('animationend', () => {
+      //   cell.removeChild(damageEl);
+      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
+      // });
+      const remove = () => {damageEl.remove()};
+      setTimeout(remove, 500);
+      resolve('999');
     });
   }
 
