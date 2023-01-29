@@ -4,7 +4,6 @@ import PositionedCharacter from './PositionedCharacter';
 import themes from './themes';
 import { calcHealthLevel, calcTileType } from './utils';
 import cursors from './cursors';
-// import {delit} from './GameController';
 
 export default class GamePlay {
   constructor() {
@@ -33,7 +32,6 @@ export default class GamePlay {
     };
     this.gameLevel = 1;
     this.playersToNewLevel = [];
-    // this.whoseTurn = 'player';
   }
 
   bindToDOM(container) {
@@ -91,7 +89,6 @@ export default class GamePlay {
    * @param positions array of PositionedCharacter objects
    */
   redrawPositions(positions) {
-    // console.log('---------------- ',this.cells);
     for (const cell of this.cells) {
       cell.innerHTML = '';
     }
@@ -170,6 +167,9 @@ export default class GamePlay {
 
   onCellEnter(event) {
     event.preventDefault();
+    if (this.gameLevel > 4) {
+      return;
+    }
     const index = this.cells.indexOf(event.currentTarget);
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     let ownerNewCell = null;
@@ -213,6 +213,9 @@ export default class GamePlay {
 
   onCellLeave(event) {
     event.preventDefault();
+    if (this.gameLevel > 4) {
+      return;
+    }
     const index = this.cells.indexOf(event.currentTarget);
     // this.cellLeaveListeners.forEach((o) => o.call(null, index));
     const classToDel = ['selected', 'selected-green', 'selected-red'];
@@ -224,6 +227,10 @@ export default class GamePlay {
   }
 
   onCellClick(event) {
+    event.preventDefault();
+    if (this.gameLevel > 4) {
+      return;
+    }
     const index = this.cells.indexOf(event.currentTarget);
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     let ownerNewCell = 'nobody'; // здесь владелец новой ячейки
@@ -248,7 +255,6 @@ export default class GamePlay {
         this.playerNow.character = character;
         this.definingMoveCells('player');
         this.definingAttackCells('player');
-        // console.log('777777', this.playerNow);
         break;
       case 'enemy':
         if (this.playerNow.whoNow === 'start') {
@@ -268,32 +274,18 @@ export default class GamePlay {
             target = item;
           }
         });
-        // console.log(`Кто ${attacker.position} кого ${target.position}`);
-        // console.log(this.cellEnterListeners);
         // Расчет ущерба
-        // console.log('attacker.character.attack 333333333333333333', attacker.character.attack);
         attackPower = Math.max(attacker.character.attack
           - target.character.defence, attacker.character.attack * 0.1);
-        
-        
-        
         // Отображаем ущерб
         this.showDamage(index, attackPower)
           .then((response) => {
-            // setTimeout( this.redrawPositions(this.cellEnterListeners), 1000);
-            console.log('====== response', response);
             this.redrawPositions(this.cellEnterListeners); // Рендерим
             // Ответный ход врага
             this.enemysMove(ownerNewCell === 'enemy' ? index : null);
           });
-        // const aaa = this.redrawPositions(this.cellEnterListeners);
-        // this.showDamage(index, attackPower);
-        // setTimeout( aaa, 500); // Рендерим
-          
-          // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
-        // console.log(index);
+        // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         target.character.health -= attackPower;
-        // console.log('222', target.character.health);
         // Удаление замоченного врага
         if (target.character.health <= 0) {
           let indexToDel;
@@ -304,12 +296,6 @@ export default class GamePlay {
           });
           this.cellEnterListeners.splice(indexToDel, 1);
         }
-        
-        // console.log('========', this.cellEnterListeners);
-        // Если враги зауончились нереходна новый уровень
-        
-        
-        
         break;
       default:
         // Если пустая ячейка
@@ -321,7 +307,6 @@ export default class GamePlay {
         if (this.playerNow.selsToMove.includes(index)) {
           // Помещаем игрока в новую ячейку
           this.cellEnterListeners.forEach((item) => {
-            // console.log('11', item);
             if (item.position === this.playerNow.indexCell) {
               item.position = index; // вопрос по lint
             }
@@ -340,8 +325,9 @@ export default class GamePlay {
 
   onNewGameClick(event) {
     event.preventDefault();
-    console.log('Новая игра');
-    this.newGameListeners.forEach((o) => o.call(null));
+    this.gameLevel = 1;
+    this.newGameInit();
+    // this.newGameListeners.forEach((o) => o.call(null));
   }
 
   onSaveGameClick(event) {
@@ -358,7 +344,6 @@ export default class GamePlay {
   onLoadGameClick(event) {
     event.preventDefault();
     const saveState = GameState.loadFrom();
-    console.log('Загружаем игру игра', saveState);
     if (!saveState) {
       this.showMessage('Нет сохраненной игры!!!');
       return;
@@ -370,6 +355,7 @@ export default class GamePlay {
     this.cells.forEach((item) => {
       item.classList.remove('selected', 'selected-yellow');
     });
+    this.drawUi(Object.values(themes)[this.gameLevel - 1]);
     this.redrawPositions(this.cellEnterListeners);
     // this.loadGameListeners.forEach((o) => o.call(null));
   }
@@ -432,7 +418,6 @@ export default class GamePlay {
   arrCross(where, what) { // вопрос по lint
     // проверка вхождение элементов одного массива в другой
     let across = null;
-    // console.log('2223== ',where, what);
     for (let i = 0; i < what.length; i += 1) {
       if (where.includes(what[i])) across = what[i];
       if (across) break;
@@ -441,8 +426,6 @@ export default class GamePlay {
   }
 
   enemysMove(enemyIndex) {
-    // console.log('enemysMove', enemyIndex, 'My', this.playerNow);
-    
     const enemiesNames = ['daemon', 'undead', 'vampire'] ;
     let attacker = null;
     let target = null;
@@ -450,14 +433,12 @@ export default class GamePlay {
     const arrEnemies = this.cellEnterListeners.filter((item) => enemiesNames.includes(item.character.type));
     // Если врагов не осталось, переход на новый уровень
     if(arrEnemies.length < 1) {
-      console.log('Враг полностью повержен!!!!!!!! ');
       // Переход на новый уровень
       this.newLevel();
       return;
     }
     // Если враг в ячейке еще жив назначаем выбераем его иначе любого другого
     for (let i in arrEnemies) {
-      // console.log('item', arrEnemies[i]);
       attacker = arrEnemies[i];
       if (attacker.position === enemyIndex) {
         break;
@@ -468,7 +449,6 @@ export default class GamePlay {
     this.enemyNow.character = attacker.character.type;
     this.definingMoveCells('enemy');
     this.definingAttackCells('enemy');
-    
     // сначала выбераю всех союзников
     const arrPlayersAll = this.cellEnterListeners.filter((item) => !enemiesNames.includes(item.character.type));
     // из них выбераю тех кто в зоне атаки
@@ -476,51 +456,28 @@ export default class GamePlay {
     // Выбераем последнего героя если есть в arrPlayersToAttack
     // Иначе последнего в массиве
     for (let i in arrPlayersToAttack) {
-      // console.log('Атакуемый игрок', arrPlayersToAttack[i]);
       target = arrPlayersToAttack[i];
       if (target.position === this.playerNow.indexCell) {
         break;
       }
     }
-    
-    // console.log('Враг',attacker,'Игрок',target);
-    // console.log('this.enemyNow', this.enemyNow);
-    // console.log('arrPlayers', arrPlayers);
-    // console.log('arrPlayersToAttack', arrPlayersToAttack);
-    
     // Выделяем ячейки без characters для хода
     const characterIndex = this.cellEnterListeners.map((item) => item.position);
     const arrToMove = this.enemyNow.selsToMove.filter((item) => !characterIndex.includes(item));
     let attackPower = null;
-    // console.log('this.enemyNow.selsToMove', this.enemyNow.selsToMove,'arrToMove', arrToMove);
     if (target) {
       // Атакуем
-
-
-
-
       // Расчет ущерба
       attackPower = Math.max(attacker.character.attack
         - target.character.defence, attacker.character.attack * 0.1);
       // анимация ущерба  
       this.showDamage(target.position, attackPower)
       .then((response) => {
-        // setTimeout( this.redrawPositions(this.cellEnterListeners), 1000);
-        // console.log('====== response ENEMY', response);
         this.redrawPositions(this.cellEnterListeners); // Рендерим
-        // Ответный ход врага
-        // this.enemysMove(ownerNewCell === 'enemy' ? index : null);
       });
-      // const aaa = this.redrawPositions(this.cellEnterListeners);
-      // this.showDamage(index, attackPower);
-      // setTimeout( aaa, 500); // Рендерим
-      
       // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
-      // console.log(index);
       target.character.health -= attackPower;
-      // console.log('222', target.character.health);
       // Удаление замоченного союзника
-      
       if (target.character.health <= 0) {
         let indexToDel;
         this.cellEnterListeners.forEach((item, indexCell) => {
@@ -528,7 +485,6 @@ export default class GamePlay {
             indexToDel = indexCell;
           }
         });
-        
         this.cellEnterListeners.splice(indexToDel, 1);
         this.cells[target.position].classList.remove('selected', 'selected-yellow');
         this.playerNow = {
@@ -538,27 +494,22 @@ export default class GamePlay {
           selsToMove: [],
           selsToAttack: [],
         };
-        // console.log('Враг Атаковал!!!');
       }
       // Содаем массив союзников, если длина < 1, GAME OVER
       const arrPlayers = this.cellEnterListeners.filter((item) => !enemiesNames.includes(item.character.type));
       if (arrPlayers.length < 1) {
+        this.gameLevel = 5;
         this.showMessage('GAME OVER!!!');
       }
     } else {
       // Делаем ход на случайную ячейку из разрешенных
       let moveIndex = Math.floor(Math.random() * arrToMove.length);
-      // console.log('Переходим на ячейку ', moveIndex);
       this.cellEnterListeners.forEach((item) => {
         if (item.position === this.enemyNow.indexCell) {
           item.position = arrToMove[moveIndex];
         }
       });
-      
       this.redrawPositions(this.cellEnterListeners); // Рендерим
-      
-      //console.log('ИНДЕКС ', arrToMove[moveIndex]);
-
     }
   }
 
@@ -688,20 +639,15 @@ export default class GamePlay {
   newLevel() {
     const playerClasses = ['bowman', 'swordsman', 'magician'];
     const arrPlayers = this.cellEnterListeners.filter((item) => playerClasses.includes(item.character.type));
-    // console.log('начало Сохраняем', arrPlayers);
     // Повышение показателей атаки/защиты 
-    // attackAfter = Math.max(attackBefore, attackBefore * (80 + life) / 100)
     arrPlayers.forEach((item) => {
       item.character.attack = item.character.attack * (80 + item.character.health) / 100;
       item.character.level += 1;
       //Показатель health приводится к значению: текущий уровень + 80 (но не более 100)
       item.character.health = item.character.health + 80 > 100 ? 100 : item.character.health + 80;
-      // console.log('item.character.attack', item.character.attack);
     });
     this.playersToNewLevel = [...arrPlayers];
-    // console.log('111111111111111111 сохраняем', this.playersToNewLevel);
     // Сохраняем выжевших для новой игры
-    // console.log('конец Сохраняем', arrPlayers);
     // Init с новыми командами
     this.gameLevel += 1;
     this.newGameInit();
@@ -709,8 +655,11 @@ export default class GamePlay {
 
   newGameInit() {
     const level = this.gameLevel;
-    // console.log('themes[this.gameLevel]', themes[level]);
-    this.drawUi(Object.values(themes)[level]);
+    if (level > 4) {
+      this.showMessage('Вы победили !!!');
+      return;
+    }
+    this.drawUi(Object.values(themes)[level - 1]);
     // Заполняем ячейки для игрока
     const playerTypes = ['Bowman', 'Swordsman', 'Magician']; // доступные классы игрока
     const team = generateTeam(playerTypes, level, level + 1);
@@ -731,10 +680,8 @@ export default class GamePlay {
       boardMy.splice(randomIndex, 1);
     });
     // Заменяем новы игроков на старых
-    // console.log('2222222222222222 проверяем', this.playersToNewLevel);
     if (this.playersToNewLevel.length > 0) {
       this.playersToNewLevel.forEach((item, index) => {
-        // console.log('3333333333333', this.playersToNewLevel[index]);
         item.position = arrPositionCharacter[index].position;
         arrPositionCharacter[index] = item;
       });
