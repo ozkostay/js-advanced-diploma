@@ -1,5 +1,9 @@
+import { generateTeam } from './generators';
+import PositionedCharacter from './PositionedCharacter';
+import themes from './themes';
 import { calcHealthLevel, calcTileType } from './utils';
 import cursors from './cursors';
+// import {delit} from './GameController';
 
 export default class GamePlay {
   constructor() {
@@ -26,6 +30,8 @@ export default class GamePlay {
       selsToMove: [],
       selsToAttack: [],
     };
+    this.gameLevel = 1;
+    this.playersToNewLevel = [];
     // this.whoseTurn = 'player';
   }
 
@@ -180,7 +186,9 @@ export default class GamePlay {
     switch (ownerNewCell) {
       case 'player':
         this.setCursor(cursors.pointer);
-        this.selectCell(index, 'green');
+        if (!this.cells[index].classList.contains('selected-yellow')) {
+          this.selectCell(index, 'green');
+        }
         break;
       case 'enemy':
         if (this.playerNow.selsToAttack.includes(index)) {
@@ -251,8 +259,7 @@ export default class GamePlay {
           return;
         }
 
-        // console.log(`Атакующий ${this.playerNow.indexCell} враг ${index}`);
-        // console.log('Бъём врага почем халва');
+        // Определяем из массива объект атакующего и цели по индексу
         this.cellEnterListeners.forEach((item) => {
           if (item.position === this.playerNow.indexCell) {
             attacker = item;
@@ -263,6 +270,7 @@ export default class GamePlay {
         // console.log(`Кто ${attacker.position} кого ${target.position}`);
         // console.log(this.cellEnterListeners);
         // Расчет ущерба
+        // console.log('attacker.character.attack 333333333333333333', attacker.character.attack);
         attackPower = Math.max(attacker.character.attack
           - target.character.defence, attacker.character.attack * 0.1);
         
@@ -273,6 +281,9 @@ export default class GamePlay {
           .then((response) => {
             // setTimeout( this.redrawPositions(this.cellEnterListeners), 1000);
             console.log('====== response', response);
+            this.redrawPositions(this.cellEnterListeners); // Рендерим
+            // Ответный ход врага
+            this.enemysMove(ownerNewCell === 'enemy' ? index : null);
           });
         // const aaa = this.redrawPositions(this.cellEnterListeners);
         // this.showDamage(index, attackPower);
@@ -292,7 +303,11 @@ export default class GamePlay {
           });
           this.cellEnterListeners.splice(indexToDel, 1);
         }
+        
         // console.log('========', this.cellEnterListeners);
+        // Если враги зауончились нереходна новый уровень
+        
+        
         
         break;
       default:
@@ -316,13 +331,14 @@ export default class GamePlay {
           this.definingAttackCells('player');
           this.selectCell(index, 'yellow');
           this.redrawPositions(this.cellEnterListeners); // Рендерим
+          this.enemysMove(ownerNewCell === 'enemy' ? index : null); // ответный ход врага
         }
         break;
     }
     // Ответный ход врага
-    if (ownerNewCell != 'player') {
-      this.enemysMove(ownerNewCell === 'enemy' ? index : null);
-    }
+    // if (ownerNewCell != 'player') {
+    //   this.enemysMove(ownerNewCell === 'enemy' ? index : null);
+    // }
   }
 
   onNewGameClick(event) {
@@ -373,23 +389,11 @@ export default class GamePlay {
       const damageEl = document.createElement('span');
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
-      
-      cell.appendChild(damageEl); // '<span class="damage">30</span>'
-      // cell.insertAdjacentHTML('beforeend', '<span class="damage">30</span>');
-
-
-
-      console.log('damageEl', damageEl);
-      // console.log('Responssssss index', index, 'damage ', damage);
-      console.log('Responssssss cell', cell);
-
-      // damageEl.addEventListener('animationend', () => {
-      //   cell.removeChild(damageEl);
-      //   resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
-      // });
-      const remove = () => {damageEl.remove()};
-      setTimeout(remove, 500);
-      resolve('999');
+      cell.appendChild(damageEl);
+      damageEl.addEventListener('animationend', () => {
+        cell.removeChild(damageEl);
+        resolve('Amination done!!!!!!!!!!!!!!!!!!!!! ===');
+      });
     });
   }
 
@@ -426,15 +430,13 @@ export default class GamePlay {
     let target = null;
     // Создаем массив врагов
     const arrEnemies = this.cellEnterListeners.filter((item) => enemiesNames.includes(item.character.type));
-    // console.log('Длина массива Врагов', arrEnemies.length);
     // Если врагов не осталось, переход на новый уровень
     if(arrEnemies.length < 1) {
       console.log('Враг полностью повержен!!!!!!!! ');
-      // Здесь Переход на новый уровень
+      // Переход на новый уровень
+      this.newLevel();
       return;
     }
-    
-    
     // Если враг в ячейке еще жив назначаем выбераем его иначе любого другого
     for (let i in arrEnemies) {
       // console.log('item', arrEnemies[i]);
@@ -443,16 +445,15 @@ export default class GamePlay {
         break;
       }
     }
-     
     // Определяем допустимые ячейки передвижения и атаки для врага
     this.enemyNow.indexCell = attacker.position;
     this.enemyNow.character = attacker.character.type;
     this.definingMoveCells('enemy');
     this.definingAttackCells('enemy');
     
-    // выбераю всех союзников
+    // сначала выбераю всех союзников
     const arrPlayersAll = this.cellEnterListeners.filter((item) => !enemiesNames.includes(item.character.type));
-    // выбераю тех кто в зоне атаки
+    // из них выбераю тех кто в зоне атаки
     const arrPlayersToAttack = arrPlayersAll.filter((item) => this.enemyNow.selsToAttack.includes(item.position));
     // Выбераем последнего героя если есть в arrPlayersToAttack
     // Иначе последнего в массиве
@@ -464,7 +465,7 @@ export default class GamePlay {
       }
     }
     
-    console.log('Враг',attacker,'Игрок',target);
+    // console.log('Враг',attacker,'Игрок',target);
     // console.log('this.enemyNow', this.enemyNow);
     // console.log('arrPlayers', arrPlayers);
     // console.log('arrPlayersToAttack', arrPlayersToAttack);
@@ -472,20 +473,72 @@ export default class GamePlay {
     // Выделяем ячейки без characters для хода
     const characterIndex = this.cellEnterListeners.map((item) => item.position);
     const arrToMove = this.enemyNow.selsToMove.filter((item) => !characterIndex.includes(item));
-    console.log('this.enemyNow.selsToMove', this.enemyNow.selsToMove,'arrToMove', arrToMove);
+    let attackPower = null;
+    // console.log('this.enemyNow.selsToMove', this.enemyNow.selsToMove,'arrToMove', arrToMove);
     if (target) {
       // Атакуем
-      console.log('Враг Атаковал!!!');
+
+
+
+
+      // Расчет ущерба
+      attackPower = Math.max(attacker.character.attack
+        - target.character.defence, attacker.character.attack * 0.1);
+      // анимация ущерба  
+      this.showDamage(target.position, attackPower)
+      .then((response) => {
+        // setTimeout( this.redrawPositions(this.cellEnterListeners), 1000);
+        // console.log('====== response ENEMY', response);
+        this.redrawPositions(this.cellEnterListeners); // Рендерим
+        // Ответный ход врага
+        // this.enemysMove(ownerNewCell === 'enemy' ? index : null);
+      });
+      // const aaa = this.redrawPositions(this.cellEnterListeners);
+      // this.showDamage(index, attackPower);
+      // setTimeout( aaa, 500); // Рендерим
+      
+      // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
+      // console.log(index);
+      target.character.health -= attackPower;
+      // console.log('222', target.character.health);
+      // Удаление замоченного союзника
+      
+      if (target.character.health <= 0) {
+        let indexToDel;
+        this.cellEnterListeners.forEach((item, indexCell) => {
+          if (item.position === target.position) {
+            indexToDel = indexCell;
+          }
+        });
+        
+        this.cellEnterListeners.splice(indexToDel, 1);
+        this.cells[target.position].classList.remove('selected', 'selected-yellow');
+        this.playerNow = {
+          whoNow: 'start',
+          indexCell: null,
+          character: null,
+          selsToMove: [],
+          selsToAttack: [],
+        };
+        // console.log('Враг Атаковал!!!');
+      }
+      // Содаем массив союзников, если длина < 1, GAME OVER
+      const arrPlayers = this.cellEnterListeners.filter((item) => !enemiesNames.includes(item.character.type));
+      if (arrPlayers.length < 1) {
+        this.showMessage('GAME OVER!!!');
+      }
     } else {
       // Делаем ход на случайную ячейку из разрешенных
       let moveIndex = Math.floor(Math.random() * arrToMove.length);
-      console.log('Переходим на ячейку ', moveIndex);
+      // console.log('Переходим на ячейку ', moveIndex);
       this.cellEnterListeners.forEach((item) => {
         if (item.position === this.enemyNow.indexCell) {
           item.position = arrToMove[moveIndex];
         }
       });
+      
       this.redrawPositions(this.cellEnterListeners); // Рендерим
+      
       //console.log('ИНДЕКС ', arrToMove[moveIndex]);
 
     }
@@ -611,8 +664,80 @@ export default class GamePlay {
         tempTrueCells.push(index);
       }
     });
-
-    // console.log('0000000000=== ', tempTrueCells);
     who.selsToAttack = [...new Set(tempTrueCells)];
+  }
+
+  newLevel() {
+    const playerClasses = ['bowman', 'swordsman', 'magician'];
+    const arrPlayers = this.cellEnterListeners.filter((item) => playerClasses.includes(item.character.type));
+    // console.log('начало Сохраняем', arrPlayers);
+    // Повышение показателей атаки/защиты 
+    // attackAfter = Math.max(attackBefore, attackBefore * (80 + life) / 100)
+    arrPlayers.forEach((item) => {
+      item.character.attack = item.character.attack * (80 + item.character.health) / 100;
+      item.character.level += 1;
+      //Показатель health приводится к значению: текущий уровень + 80 (но не более 100)
+      item.character.health = item.character.health + 80 > 100 ? 100 : item.character.health + 80;
+      // console.log('item.character.attack', item.character.attack);
+    });
+    this.playersToNewLevel = [...arrPlayers];
+    console.log('111111111111111111 сохраняем', this.playersToNewLevel);
+    // Сохраняем выжевших для новой игры
+    console.log('конец Сохраняем', arrPlayers);
+    // Init с новыми командами
+    this.gameLevel += 1;
+    this.newGameInit();
+  }
+
+  newGameInit() {
+    const level = this.gameLevel;
+    // console.log('themes[this.gameLevel]', themes[level]);
+    this.drawUi(Object.values(themes)[level]);
+    // Заполняем ячейки для игрока
+    const playerTypes = ['Bowman', 'Swordsman', 'Magician']; // доступные классы игрока
+    const team = generateTeam(playerTypes, level, level + 1);
+    const boardSize = this.boardSize;
+    const boardMy = [];
+    for (let i = 0; i < this.boardSize; i += 1) {
+      boardMy.push(i * boardSize);
+      boardMy.push(i * boardSize + 1);
+    }
+    const arrPositionCharacter = [];
+    team.characters.forEach((item) => {
+      const arrBoardLength = boardMy.length;
+      const randomIndex = Math.floor(Math.random() * arrBoardLength);
+      const position = boardMy[randomIndex];
+      const positionedCharacter = new PositionedCharacter(item, position);
+      arrPositionCharacter.push(positionedCharacter);
+      this.playerNow.selsToMove.push(positionedCharacter.position);
+      boardMy.splice(randomIndex, 1);
+    });
+    // Заменяем новы игроков на старых
+    console.log('2222222222222222 проверяем', this.playersToNewLevel);
+    if (this.playersToNewLevel.length > 0) {
+      this.playersToNewLevel.forEach((item, index) => {
+        console.log('3333333333333', this.playersToNewLevel[index]);
+        item.position = arrPositionCharacter[index].position;
+        arrPositionCharacter[index] = item;
+      });
+    }
+    // Заполняем ячейки для Противника
+    const playerTypes2 = ['Daemon', 'Undead', 'Vampire']; // доступные классы врага
+    const team2 = generateTeam(playerTypes2, level, level + 1);
+    const boardEnemy = [];
+    for (let i = 0; i < this.boardSize; i += 1) {
+      boardEnemy.push(i * boardSize + 6);
+      boardEnemy.push(i * boardSize + 7);
+    }
+    team2.characters.forEach((item) => {
+      const arrBoardLength = boardEnemy.length;
+      const randomIndex = Math.floor(Math.random() * arrBoardLength);
+      const position = boardEnemy[randomIndex];
+      const positionedCharacter = new PositionedCharacter(item, position);
+      arrPositionCharacter.push(positionedCharacter);
+      boardEnemy.splice(randomIndex, 1);
+    });
+    this.cellEnterListeners = [...arrPositionCharacter];
+    this.redrawPositions(this.cellEnterListeners);
   }
 }
