@@ -1,3 +1,4 @@
+import GameState from './GameState';
 import { generateTeam } from './generators';
 import PositionedCharacter from './PositionedCharacter';
 import themes from './themes';
@@ -335,25 +336,42 @@ export default class GamePlay {
         }
         break;
     }
-    // Ответный ход врага
-    // if (ownerNewCell != 'player') {
-    //   this.enemysMove(ownerNewCell === 'enemy' ? index : null);
-    // }
   }
 
   onNewGameClick(event) {
     event.preventDefault();
+    console.log('Новая игра');
     this.newGameListeners.forEach((o) => o.call(null));
   }
 
   onSaveGameClick(event) {
     event.preventDefault();
-    this.saveGameListeners.forEach((o) => o.call(null));
+    const objToSave = {};
+    objToSave.cellEnterListeners = this.cellEnterListeners;
+    objToSave.playerNow = this.playerNow;
+    objToSave.enemyNow = this.enemyNow;
+    objToSave.gameLevel = this.gameLevel;
+    GameState.saveFrom(objToSave);
+    // this.saveGameListeners.forEach((o) => o.call(null));
   }
 
   onLoadGameClick(event) {
     event.preventDefault();
-    this.loadGameListeners.forEach((o) => o.call(null));
+    const saveState = GameState.loadFrom();
+    console.log('Загружаем игру игра', saveState);
+    if (!saveState) {
+      this.showMessage('Нет сохраненной игры!!!');
+      return;
+    }
+    this.cellEnterListeners = [...saveState.cellEnterListeners];
+    this.playerNow = {...saveState.playerNow};
+    this.enemyNow = {...saveState.enemyNow};
+    this.gameLevel = saveState.gameLevel;
+    this.cells.forEach((item) => {
+      item.classList.remove('selected', 'selected-yellow');
+    });
+    this.redrawPositions(this.cellEnterListeners);
+    // this.loadGameListeners.forEach((o) => o.call(null));
   }
 
   showError(message) {
@@ -681,9 +699,9 @@ export default class GamePlay {
       // console.log('item.character.attack', item.character.attack);
     });
     this.playersToNewLevel = [...arrPlayers];
-    console.log('111111111111111111 сохраняем', this.playersToNewLevel);
+    // console.log('111111111111111111 сохраняем', this.playersToNewLevel);
     // Сохраняем выжевших для новой игры
-    console.log('конец Сохраняем', arrPlayers);
+    // console.log('конец Сохраняем', arrPlayers);
     // Init с новыми командами
     this.gameLevel += 1;
     this.newGameInit();
@@ -713,10 +731,10 @@ export default class GamePlay {
       boardMy.splice(randomIndex, 1);
     });
     // Заменяем новы игроков на старых
-    console.log('2222222222222222 проверяем', this.playersToNewLevel);
+    // console.log('2222222222222222 проверяем', this.playersToNewLevel);
     if (this.playersToNewLevel.length > 0) {
       this.playersToNewLevel.forEach((item, index) => {
-        console.log('3333333333333', this.playersToNewLevel[index]);
+        // console.log('3333333333333', this.playersToNewLevel[index]);
         item.position = arrPositionCharacter[index].position;
         arrPositionCharacter[index] = item;
       });
