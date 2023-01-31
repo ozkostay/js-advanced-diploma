@@ -32,6 +32,7 @@ export default class GamePlay {
     };
     this.gameLevel = 1;
     this.playersToNewLevel = [];
+    this.blockBoard = false;
   }
 
   bindToDOM(container) {
@@ -228,7 +229,8 @@ export default class GamePlay {
 
   onCellClick(event) {
     event.preventDefault();
-    if (this.gameLevel > 4) {
+    if (this.gameLevel > 4 || this.blockBoard) {
+      console.log('NoClick', this.blockBoard)
       return;
     }
     const index = this.cells.indexOf(event.currentTarget);
@@ -283,6 +285,7 @@ export default class GamePlay {
             this.redrawPositions(this.cellEnterListeners); // Рендерим
             // Ответный ход врага
             this.enemysMove(ownerNewCell === 'enemy' ? index : null);
+            this.blockBoard = false;
           });
         // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
         target.character.health -= attackPower;
@@ -389,6 +392,7 @@ export default class GamePlay {
 
   showDamage(index, damage) {
     return new Promise((resolve) => {
+      this.blockBoard = true;
       const cell = this.cells[index];
       const damageEl = document.createElement('span');
       damageEl.textContent = damage;
@@ -470,10 +474,12 @@ export default class GamePlay {
       // Расчет ущерба
       attackPower = Math.max(attacker.character.attack
         - target.character.defence, attacker.character.attack * 0.1);
-      // анимация ущерба  
+      // анимация ущерба 
+      this.blockBoard = true; 
       this.showDamage(target.position, attackPower)
       .then((response) => {
         this.redrawPositions(this.cellEnterListeners); // Рендерим
+        this.blockBoard = false;
       });
       // При совершении атаки вы должны уменьшить здоровье атакованного персонажа на размер урона.
       target.character.health -= attackPower;
